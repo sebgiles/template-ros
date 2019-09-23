@@ -1,6 +1,9 @@
 # parameters
 ARG REPO_NAME="<REPO_NAME_HERE>"
 
+# maintainer
+LABEL maintainer="<YOUR_FULL_NAME> (<YOUR_EMAIL_ADDRESS>)"
+
 # ==================================================>
 # ==> Do not change this code
 ARG ARCH=arm32v7
@@ -11,8 +14,15 @@ ARG BASE_IMAGE=dt-ros-commons
 # define base image
 FROM duckietown/${BASE_IMAGE}:${BASE_TAG}
 
-# define repository path
+# check REPO_NAME
 ARG REPO_NAME
+RUN bash -c \
+  'if [ "${REPO_NAME}" = "<REPO_NAME_HERE>" ]; then \
+    >&2 echo "ERROR: You need to change the value of REPO_NAME inside Dockerfile."; \
+    exit 1; \
+  fi'
+
+# define repository path
 ARG REPO_PATH="${CATKIN_WS_DIR}/src/${REPO_NAME}"
 WORKDIR "${REPO_PATH}"
 
@@ -35,6 +45,9 @@ RUN pip install -r ${REPO_PATH}/dependencies-py.txt
 # copy the source code
 COPY . "${REPO_PATH}/"
 
+# copy avahi services
+COPY ./assets/avahi-services/. /avahi-services/
+
 # build packages
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
   catkin build \
@@ -47,6 +60,3 @@ ENV LAUNCHFILE "${REPO_PATH}/launch.sh"
 CMD ["bash", "-c", "${LAUNCHFILE}"]
 # <== Do not change this code
 # <==================================================
-
-# maintainer
-LABEL maintainer="<YOUR_FULL_NAME> (<YOUR_EMAIL_ADDRESS>)"
